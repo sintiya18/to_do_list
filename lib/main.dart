@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:to_do_list/login_screen.dart';
 import 'package:to_do_list/splash_screen.dart';
+import 'package:to_do_list/dashboard.dart';
+import 'package:to_do_list/tambah_tugas_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +20,7 @@ class MyApp extends StatelessWidget {
         
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: SplashScreen(),
+      home: DaftarTugasScreen()
     );
   }
 }

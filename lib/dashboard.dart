@@ -63,28 +63,31 @@ class DashboardScreen extends StatelessWidget {
                   mainAxisSpacing: 12,
                   children: const [
                     StatBox(
-                      label: "total tugas",
+                      label: "Total Tugas",
                       count: "10",
                       color: Color(0xFF00BCD4),
+                      icon: Icons.task,
                     ),
                     StatBox(
-                      label: "selesai",
-                      count: "10",
+                      label: "Selesai",
+                      count: "7",
                       color: Color(0xFF8BC34A),
+                      icon: Icons.check_circle,
                     ),
                     StatBox(
-                      label: "belum selesai",
-                      count: "10",
+                      label: "Belum Selesai",
+                      count: "3",
                       color: Color(0xFFF44336),
+                      icon: Icons.warning_amber,
                     ),
                     StatBox(
-                      label: "mendekati DL",
-                      count: "10",
+                      label: "Mendekati DL",
+                      count: "2",
                       color: Color(0xFFFFC107),
+                      icon: Icons.schedule,
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 30),
                 const Text(
                   "Statistik",
@@ -93,7 +96,6 @@ class DashboardScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 200,
@@ -105,14 +107,24 @@ class DashboardScreen extends StatelessWidget {
                         PieChartSectionData(
                           color: Colors.blue,
                           value: 60,
-                          title: '',
+                          title: '60%',
                           radius: 50,
+                          titleStyle: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         PieChartSectionData(
                           color: Colors.orange,
                           value: 40,
-                          title: '',
+                          title: '40%',
                           radius: 50,
+                          titleStyle: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -126,17 +138,18 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
-
 class StatBox extends StatelessWidget {
   final String label;
   final String count;
   final Color color;
+  final IconData icon;
 
   const StatBox({
     super.key,
     required this.label,
     required this.count,
     required this.color,
+    required this.icon,
   });
 
   @override
@@ -144,21 +157,23 @@ class StatBox extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Icon(icon, color: Colors.white, size: 28),
+          const SizedBox(height: 12),
           Text(
             count,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             label,
             style: const TextStyle(color: Colors.white),
