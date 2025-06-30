@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'register_screen.dart'; 
+import 'register_screen.dart';
+import 'dashboard.dart'; // <--- Tambahkan ini
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -29,7 +30,6 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 40),
 
-              
                 TextField(
                   controller: usernameController,
                   decoration: InputDecoration(
@@ -44,7 +44,6 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-            
                 TextField(
                   controller: passwordController,
                   obscureText: true,
@@ -60,7 +59,6 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-             
                 SizedBox(
                   width: double.infinity,
                   height: 45,
@@ -72,7 +70,12 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
-                   
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DashboardScreen(),
+                        ),
+                      );
                     },
                     child: const Text("Login"),
                   ),
