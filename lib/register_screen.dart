@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'login_screen.dart'; 
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -23,6 +24,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showMessage("Password tidak cocok!");
     } else {
       _showMessage("Registrasi berhasil!");
+
+     
+      Future.delayed(const Duration(seconds: 1), () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      });
     }
   }
 
@@ -36,7 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [ Color(0xFFc2fcfc), Color(0xFFc2fcfc)],
+            colors: [Color(0xFFa0f1f1), Color(0xFFc2fcfc)], 
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -46,8 +55,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                const Text("Registrasi", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Registrasi",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 30),
+
+               
                 TextField(
                   controller: usernameController,
                   decoration: const InputDecoration(
@@ -59,6 +73,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+          
                 TextField(
                   controller: passwordController,
                   obscureText: true,
@@ -71,6 +87,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+             
                 TextField(
                   controller: confirmPasswordController,
                   obscureText: true,
@@ -82,6 +100,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+
+              
                 ElevatedButton(
                   onPressed: _register,
                   style: ElevatedButton.styleFrom(
@@ -91,16 +111,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: const Text("Sign In"),
                 ),
                 const SizedBox(height: 16),
-                const Text.rich(
-                  TextSpan(
-                    text: "Sudah punya akun? ",
-                    children: [
-                      TextSpan(
-                        text: "Masuk",
-                        style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+
+             
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Sudah punya akun? "),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        );
+                      },
+                      child: const Text(
+                        "Masuk",
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
