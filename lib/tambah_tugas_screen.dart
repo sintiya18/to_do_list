@@ -1,7 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:to_do_list/tambah_tugas.dart';
+import 'edit_tugas.dart';
 
-class DaftarTugasScreen extends StatelessWidget {
+class DaftarTugasScreen extends StatefulWidget {
   const DaftarTugasScreen({super.key});
+
+  @override
+  State<DaftarTugasScreen> createState() => _DaftarTugasScreenState();
+}
+
+class _DaftarTugasScreenState extends State<DaftarTugasScreen> {
+  void _navigateToTambahTugas() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TambahTugas()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,20 +44,20 @@ class DaftarTugasScreen extends StatelessWidget {
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: const [
-                    TaskCard(
+                  children: [
+                    const TaskCard(
                       title: 'Belajar',
                       description: 'Belajar Ngoding',
                       date: 'Senin, 02/06/2025',
                     ),
-                    SizedBox(height: 12),
-                    TaskCard(
+                    const SizedBox(height: 12),
+                    const TaskCard(
                       title: 'Laporan',
                       description: 'Projek Kelompok',
                       date: 'Selasa, 29/05/2025',
                     ),
-                    SizedBox(height: 20),
-                    AddTaskButton(),
+                    const SizedBox(height: 20),
+                    AddTaskButton(onTap: _navigateToTambahTugas), 
                   ],
                 ),
               ),
@@ -111,7 +125,12 @@ class TaskCard extends StatelessWidget {
               Text(date),
               const Spacer(),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const EditTugas()),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.yellow,
                   foregroundColor: Colors.black,
@@ -135,13 +154,14 @@ class TaskCard extends StatelessWidget {
 }
 
 class AddTaskButton extends StatelessWidget {
-  const AddTaskButton({super.key});
+  final VoidCallback onTap;
+
+  const AddTaskButton({super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-      },
+      onTap: onTap,
       child: Container(
         height: 100,
         decoration: BoxDecoration(
