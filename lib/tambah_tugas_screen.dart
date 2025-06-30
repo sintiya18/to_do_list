@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const DaftarTugasScreen(),
+      home: DaftarTugasScreen(),
     );
   }
 }
@@ -25,55 +23,41 @@ class DaftarTugasScreen extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
+            colors: [Color(0xFFB9FBC0), Color(0xFF1FAB89)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.cyanAccent, Colors.tealAccent],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              const SizedBox(height: 20),
-              const Text(
-                'Daftar Tugas',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Text(
+                  'Daftar Tugas',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: [
-                    buildTaskCard(
-                      title: "Belajar",
-                      subtitle: "Belajar Ngoding",
-                      date: "Senin, 02/06/2025",
+                  children: const [
+                    TaskCard(
+                      title: 'Belajar',
+                      description: 'Belajar Ngoding',
+                      date: 'Senin, 02/06/2025',
                     ),
-                    const SizedBox(height: 10),
-                    buildTaskCard(
-                      title: "Laporan",
-                      subtitle: "Proyek Kelompok",
-                      date: "Selasa, 20/05/2025",
+                    SizedBox(height: 12),
+                    TaskCard(
+                      title: 'Laporan',
+                      description: 'Projek Kelompok',
+                      date: 'Selasa, 29/05/2025',
                     ),
-                    const SizedBox(height: 20),
-                    GestureDetector(
-                      onTap: () {
-                        // Tambah tugas
-                      },
-                      child: Container(
-                        height: 80,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.blue),
-                          borderRadius: BorderRadius.circular(12),
-                          color: Colors.transparent,
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.add, size: 32, color: Colors.blue),
-                        ),
-                      ),
-                    ),
+                    SizedBox(height: 20),
+                    AddTaskButton(),
                   ],
                 ),
               ),
@@ -82,89 +66,109 @@ class DaftarTugasScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.blue[100],
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Colors.blueAccent,
         unselectedItemColor: Colors.grey,
         showSelectedLabels: false,
         showUnselectedLabels: false,
+        backgroundColor: Colors.white,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Tugas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Statistik',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profil',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
         ],
       ),
     );
   }
+}
 
-  Widget buildTaskCard({
-    required String title,
-    required String subtitle,
-    required String date,
-  }) {
-    return Card(
-      color: Colors.blue[100],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Checkbox(value: false, onChanged: (val) {}),
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+class TaskCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final String date;
+
+  const TaskCard({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.date,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFB3E5FC),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.check_box_outline_blank),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(description),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+              const SizedBox(width: 6),
+              Text(date),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.yellow,
+                  foregroundColor: Colors.black,
                 ),
-              ],
-            ),
-            Text(subtitle),
-            const SizedBox(height: 5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today, size: 16),
-                    const SizedBox(width: 4),
-                    Text(date),
-                  ],
+                child: const Text('Edit'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
                 ),
-                Row(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.yellow[700],
-                      ),
-                      child: const Text("Edit"),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                      ),
-                      child: const Text("Hapus"),
-                    ),
-                  ],
-                )
-              ],
-            ),
-          ],
+                child: const Text('Hapus'),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class AddTaskButton extends StatelessWidget {
+  const AddTaskButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+      },
+      child: Container(
+        height: 100,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.blueAccent),
+          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFFB9FBC0),
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.add,
+            size: 40,
+            color: Colors.blueAccent,
+          ),
         ),
       ),
     );
