@@ -23,7 +23,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showMessage("Password tidak cocok!");
     } else {
       _showMessage("Registrasi berhasil!");
-      // Lanjutkan ke proses simpan akun atau Firebase
     }
   }
 
@@ -37,7 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFB2FEFA), Color(0xFF0ED2F7)],
+            colors: [ Color(0xFFc2fcfc), Color(0xFFc2fcfc)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),

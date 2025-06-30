@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'register_screen.dart'; 
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -28,7 +29,7 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 40),
 
-               
+              
                 TextField(
                   controller: usernameController,
                   decoration: InputDecoration(
@@ -43,7 +44,7 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-              
+            
                 TextField(
                   controller: passwordController,
                   obscureText: true,
@@ -59,7 +60,7 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-            
+             
                 SizedBox(
                   width: double.infinity,
                   height: 45,
@@ -71,28 +72,27 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
-                     
+                   
                     },
                     child: const Text("Login"),
                   ),
                 ),
                 const SizedBox(height: 20),
 
-              
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text("Belum punya akun? "),
-                    GestureDetector(
-                      onTap: () {
-                      
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                        );
                       },
                       child: const Text(
                         "Buat Akun",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueAccent,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
