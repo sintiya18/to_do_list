@@ -23,7 +23,7 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
     judulController = TextEditingController(text: widget.task['title']);
     tanggalController = TextEditingController(text: widget.task['date']);
 
-    // coba parse tanggal+jam dari task
+  
     try {
       selectedDateTime = DateTime.parse(_toIsoFormat(widget.task['date']!));
     } catch (_) {
@@ -104,7 +104,7 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 5, 5, 5),
+                        color: Color.fromARGB(255, 0, 0, 0),
                       ),
                     ),
                     const SizedBox(height: 24),

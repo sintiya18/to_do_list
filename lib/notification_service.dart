@@ -12,7 +12,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-    // inisialisasi timezone
+  
     tz.initializeTimeZones();
 
     const AndroidInitializationSettings androidSettings =
@@ -32,7 +32,6 @@ class NotificationService {
   }) async {
     final DateTime now = DateTime.now();
 
-    // jika deadline sudah lewat atau kurang dari sekarang +5 menit, pakai sekarang +5 detik
     final DateTime notifTime = scheduledDateTime.subtract(const Duration(minutes: 5)).isBefore(now)
         ? now.add(const Duration(seconds: 5))
         : scheduledDateTime.subtract(const Duration(minutes: 5));
