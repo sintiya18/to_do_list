@@ -3,7 +3,6 @@ import 'package:to_do_list/login_screen.dart';
 import 'package:to_do_list/splash_screen.dart';
 import 'package:to_do_list/dashboard.dart';
 import 'package:to_do_list/tambah_tugas_screen.dart';
-
 import 'register_screen.dart';
 
 void main() {
@@ -22,7 +21,7 @@ class MyApp extends StatelessWidget {
         
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: DaftarTugasScreen()
+      home: SplashScreen()
     );
   }
 }
