@@ -1,23 +1,61 @@
 import 'package:flutter/material.dart';
+import 'dashboard.dart';
+import 'package:to_do_list/splash_screen.dart';
 
 void main() {
-  runApp(const Profil());
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: ProfilePage(),
+  ));
 }
 
-class Profil extends StatelessWidget {
-  const Profil({super.key});
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ProfilePage(),
-    );
-  }
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+class _ProfilePageState extends State<ProfilePage> {
+  int _currentIndex = 1; 
+
+  final TextEditingController usernameController =
+      TextEditingController(text: 'sintiya');
+  final TextEditingController passwordController =
+      TextEditingController(text: 'password123');
+
+  void saveProfile() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profil berhasil diperbarui')),
+    );
+  }
+
+ void logout() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Konfirmasi Logout'),
+        content: const Text('Apakah Anda yakin ingin logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const SplashScreen()),
+              );
+            },
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +92,10 @@ class ProfilePage extends StatelessWidget {
                         child: Column(
                           children: [
                             TextField(
+                              controller: usernameController,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.person),
-                                hintText: 'Username',
+                                labelText: 'Username',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -64,13 +103,32 @@ class ProfilePage extends StatelessWidget {
                             ),
                             const SizedBox(height: 16),
                             TextField(
+                              controller: passwordController,
                               obscureText: true,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.lock),
-                                hintText: 'Password',
+                                labelText: 'Password',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.teal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 60,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'Simpan',
+                                style: TextStyle(color: Colors.white),
                               ),
                             ),
                           ],
@@ -78,11 +136,9 @@ class ProfilePage extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: () {
-                          // Logika Logout
-                        },
+                        onPressed: logout,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.lightBlueAccent,
+                          backgroundColor: Colors.redAccent,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 60,
                             vertical: 12,
@@ -108,15 +164,24 @@ class ProfilePage extends StatelessWidget {
         backgroundColor: Colors.lightBlueAccent,
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white70,
-        currentIndex: 3,
+        currentIndex: _currentIndex,
         onTap: (index) {
-          // Tambahkan logika navigasi jika diperlukan
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const DashboardScreen(),
+              ),
+            );
+          } else {
+            setState(() {
+              _currentIndex = index;
+            });
+          }
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
     );
@@ -141,3 +206,5 @@ class LinearGradientBackground extends StatelessWidget {
     );
   }
 }
+
+

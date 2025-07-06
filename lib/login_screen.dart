@@ -36,7 +36,7 @@ class LoginScreen extends StatelessWidget {
                     prefixIcon: const Icon(Icons.person),
                     hintText: "Username",
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: Colors.white, 
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),

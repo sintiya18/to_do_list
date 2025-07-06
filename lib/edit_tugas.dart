@@ -1,141 +1,209 @@
 import 'package:flutter/material.dart';
+import 'notification_service.dart';
 
-void main() => runApp(const MyApp());
+class EditTugasScreen extends StatefulWidget {
+  final Map<String, String> task;
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const EditTugasScreen({super.key, required this.task});
+
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: EditTugas(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  State<EditTugasScreen> createState() => _EditTugasScreenState();
 }
 
-class Task {
-  final String title;
-  final String description;
-  final String date;
+class _EditTugasScreenState extends State<EditTugasScreen> {
+  late TextEditingController judulController;
+  late TextEditingController tanggalController;
+  String status = 'Belum Dikerjakan';
 
-  Task({required this.title, required this.description, required this.date});
-}
+  DateTime? selectedDateTime;
 
-class EditTugas extends StatefulWidget {
-  const EditTugas({super.key});
   @override
-  State<EditTugas> createState() => _EditTugasState();
-}
+  void initState() {
+    super.initState();
+    judulController = TextEditingController(text: widget.task['title']);
+    tanggalController = TextEditingController(text: widget.task['date']);
 
-class _EditTugasState extends State<EditTugas> {
-  final List<Task> tasks = [
-    Task(title: "Belajar", description: "Belajar Ngoding", date: "Senin, 02/06/2025"),
-    Task(title: "Laporan", description: "Projek Kelompok", date: "Selasa, 29/05/2025"),
-  ];
+    // coba parse tanggal+jam dari task
+    try {
+      selectedDateTime = DateTime.parse(_toIsoFormat(widget.task['date']!));
+    } catch (_) {
+      selectedDateTime = DateTime.now();
+    }
 
-  void _addTask() {
-    // Tambah tugas nanti
+    status = widget.task['status']!;
   }
 
-  Widget _buildTaskCard(Task task) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF8EC5FC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(task.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-          const SizedBox(height: 4),
-          Text(task.description, style: const TextStyle(color: Colors.white)),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today, size: 16, color: Colors.white),
-              const SizedBox(width: 4),
-              Text(task.date, style: const TextStyle(color: Colors.white)),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.yellow,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                ),
-                child: const Text("Edit"),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                ),
-                child: const Text("Hapus"),
-              ),
-            ],
-          ),
-        ],
-      ),
+  String _toIsoFormat(String date) {
+    final parts = date.split(' ');
+    final d = parts[0].split('/');
+    final t = parts.length > 1 ? parts[1] : '00:00';
+    return '${d[2]}-${d[1]}-${d[0]}T$t';
+  }
+
+  Future<void> _selectDateTime() async {
+    final DateTime now = DateTime.now();
+
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDateTime ?? now,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
     );
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(selectedDateTime ?? now),
+      );
+
+      if (pickedTime != null) {
+        setState(() {
+          selectedDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+
+          tanggalController.text =
+              "${selectedDateTime!.day.toString().padLeft(2, '0')}/"
+              "${selectedDateTime!.month.toString().padLeft(2, '0')}/"
+              "${selectedDateTime!.year} "
+              "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    judulController.dispose();
+    tanggalController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFa0f1f1),
+      backgroundColor: const Color(0xFFB2FEFA),
       body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            const Text(
-              "Edit Tugas",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 4,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ListView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    ...tasks.map(_buildTaskCard),
-                    const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: _addTask,
-                      child: Container(
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF7FFFD4),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.blue.shade300),
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.add, size: 40, color: Colors.blue),
-                        ),
+                    const Text(
+                      'Edit Tugas',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 5, 5, 5),
                       ),
-                    )
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: judulController,
+                      decoration: const InputDecoration(
+                        labelText: 'Judul',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: tanggalController,
+                      readOnly: true,
+                      onTap: _selectDateTime,
+                      decoration: const InputDecoration(
+                        labelText: 'Tanggal & Jam',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: status,
+                      items: const [
+                        DropdownMenuItem(value: 'Belum Dikerjakan', child: Text('Belum Dikerjakan')),
+                        DropdownMenuItem(value: 'Sudah Dikerjakan', child: Text('Sudah Dikerjakan')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            status = value;
+                          });
+                        }
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'Status',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              if (selectedDateTime != null) {
+                                await NotificationService().scheduleNotification(
+                                  id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+                                  title: 'Pengingat Tugas',
+                                  body: 'Kerjakan: ${judulController.text}',
+                                  scheduledDateTime: selectedDateTime!,
+                                );
+                              }
+
+                              Navigator.pop(context, {
+                                'title': judulController.text,
+                                'date': tanggalController.text,
+                                'status': status,
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color.fromARGB(255, 25, 205, 255),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text(
+                              'Simpan',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context, null);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text(
+                              'Batal',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.lightBlueAccent,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-        ],
       ),
     );
   }

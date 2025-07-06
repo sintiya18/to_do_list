@@ -1,210 +1,197 @@
 import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const EditTaskApp());
-}
-
-class EditTaskApp extends StatelessWidget {
-  const EditTaskApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Edit Tugas',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const TambahTugas(), 
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
+import 'dashboard.dart';
+import 'notification_service.dart';
 
 class TambahTugas extends StatefulWidget {
-  const TambahTugas({Key? key}) : super(key: key);
+  const TambahTugas({super.key});
 
   @override
-  State<TambahTugas> createState() => _TambahTugas();
+  State<TambahTugas> createState() => _TambahTugasState();
 }
 
-class _TambahTugas extends State<TambahTugas> {
+class _TambahTugasState extends State<TambahTugas> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _judulController = TextEditingController();
-  final TextEditingController _deskripsiController = TextEditingController();
   final TextEditingController _deadlineController = TextEditingController();
-  final TextEditingController _statusController = TextEditingController();
 
-  DateTime? selectedDate;
-  int _selectedIndex = 0;
+  DateTime? selectedDateTime;
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
+  Future<void> _selectDateTime(BuildContext context) async {
     final DateTime now = DateTime.now();
-    final DateTime? picked = await showDatePicker(
+
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: selectedDate ?? now,
-      firstDate: DateTime(now.year - 5),
-      lastDate: DateTime(now.year + 5),
+      initialDate: selectedDateTime ?? now,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
     );
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-        _deadlineController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-      });
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(selectedDateTime ?? now),
+      );
+
+      if (pickedTime != null) {
+        setState(() {
+          selectedDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+
+          _deadlineController.text =
+              "${selectedDateTime!.day.toString().padLeft(2, '0')}/"
+              "${selectedDateTime!.month.toString().padLeft(2, '0')}/"
+              "${selectedDateTime!.year} "
+              "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
+        });
+      }
     }
   }
 
   @override
   void dispose() {
     _judulController.dispose();
-    _deskripsiController.dispose();
     _deadlineController.dispose();
-    _statusController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF9CECFB), Color(0xFF90F7EC)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 10),
-              const Text(
-                'Edit Tugas',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Judul Tugas', style: TextStyle(fontSize: 14)),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _judulController,
-                          decoration: _inputDecoration(),
+      backgroundColor: const Color(0xFFB2FEFA),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Tambah Tugas',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 1, 9, 8),
                         ),
-                        const SizedBox(height: 16),
-                        const Text('Deskripsi', style: TextStyle(fontSize: 14)),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _deskripsiController,
-                          decoration: _inputDecoration(),
+                      ),
+                      const SizedBox(height: 24),
+                      TextFormField(
+                        controller: _judulController,
+                        decoration: const InputDecoration(
+                          labelText: 'Judul',
+                          border: OutlineInputBorder(),
                         ),
-                        const SizedBox(height: 16),
-                        const Text('Deadline', style: TextStyle(fontSize: 14)),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _deadlineController,
-                          readOnly: true,
-                          onTap: () => _selectDate(context),
-                          decoration: _inputDecoration(
-                            icon: const Icon(Icons.calendar_today_outlined, size: 20),
-                          ),
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Judul tidak boleh kosong'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _deadlineController,
+                        readOnly: true,
+                        onTap: () => _selectDateTime(context),
+                        decoration: const InputDecoration(
+                          labelText: 'Deadline (Tanggal & Jam)',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
                         ),
-                        const SizedBox(height: 16),
-                        const Text('Status', style: TextStyle(fontSize: 14)),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _statusController,
-                          maxLines: 3,
-                          decoration: _inputDecoration(),
-                        ),
-                        const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  if (_formKey.currentState!.validate()) {
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Deadline tidak boleh kosong'
+                            : null,
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                if (_formKey.currentState!.validate()) {
+                                  if (selectedDateTime == null) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Data disimpan')),
+                                      const SnackBar(
+                                          content: Text(
+                                              'Pilih deadline terlebih dahulu')),
                                     );
+                                    return;
                                   }
-                                },
-                                style: _buttonStyle(Colors.lightBlueAccent),
-                                child: const Text('Simpan'),
+
+                                  final newTask = {
+                                    'title': _judulController.text,
+                                    'date': _deadlineController.text,
+                                    'status': 'Belum Dikerjakan',
+                                  };
+
+                                  await NotificationService().scheduleNotification(
+                                    id: DateTime.now()
+                                        .millisecondsSinceEpoch
+                                        .remainder(100000),
+                                    title: 'Pengingat Tugas',
+                                    body:
+                                        'Tugas: ${_judulController.text} - deadline ${_deadlineController.text}',
+                                    scheduledDateTime: selectedDateTime!,
+                                  );
+
+                                  Navigator.pop(context, newTask);
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color.fromARGB(255, 21, 181, 255),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'Simpan',
+                                style: TextStyle(fontSize: 16),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  _formKey.currentState!.reset();
-                                  _judulController.clear();
-                                  _deskripsiController.clear();
-                                  _deadlineController.clear();
-                                  _statusController.clear();
-                                  setState(() {
-                                    selectedDate = null;
-                                  });
-                                },
-                                style: _buttonStyle(Colors.red),
-                                child: const Text('Batal'),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const DashboardScreen(),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.redAccent,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'Batal',
+                                style: TextStyle(fontSize: 16),
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.lightBlueAccent,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.checklist), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
-        ],
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration({Icon? icon}) {
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      suffixIcon: icon,
-    );
-  }
-
-  ButtonStyle _buttonStyle(Color color) {
-    return ElevatedButton.styleFrom(
-      backgroundColor: color,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
     );
   }
 }
