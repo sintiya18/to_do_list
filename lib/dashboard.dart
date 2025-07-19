@@ -30,20 +30,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> fetchUserName() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user != null) {
-      final response = await supabase
-          .from('users')
-          .select('nama')
-          .eq('id', user.id)
-          .maybeSingle();
+  final supabase = Supabase.instance.client;
+  final user = supabase.auth.currentUser;
+  if (user != null) {
+    final response = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .maybeSingle();
 
-      setState(() {
-        userDisplayName = (response?['nama'] ?? user.email ?? 'User').toString();
-      });
-    }
+    setState(() {
+      userDisplayName = (response?['username'] ?? user.email ?? 'User').toString();
+    });
   }
+}
+
 
   Future<void> fetchTasks() async {
     setState(() => isLoading = true);
@@ -214,7 +215,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Selamat datang di aplikasi To-Do List',
+                        'Siap menyelesaikan tugas hari ini? 🚀',
                         style: TextStyle(fontSize: 16),
                       ),
                       const SizedBox(height: 16),
@@ -255,6 +256,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        selectedItemColor: const Color.fromARGB(255, 50, 170, 144),
+        unselectedItemColor: const Color.fromARGB(179, 98, 207, 184),
         currentIndex: 0,
         onTap: (index) async {
           if (index == 1) {

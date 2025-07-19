@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:another_flushbar/flushbar.dart';
 import 'dashboard.dart';
 import 'login_screen.dart';
 
@@ -39,19 +40,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
     try {
       final profile = await supabase
-          .from('users')
+          .from('profiles')
           .select()
           .eq('id', user.id)
           .maybeSingle();
 
       if (profile != null) {
-        namaController.text = profile['nama'] ?? '';
-        emailController.text = profile['email'] ?? '';
+        namaController.text = profile['username'] ?? '';
+        emailController.text = user.email ?? '';
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat profil: $e')),
-      );
+      _showFlushbar('Gagal memuat profil: $e', success: false);
     }
 
     setState(() {
@@ -64,13 +63,10 @@ class _ProfilePageState extends State<ProfilePage> {
     if (user == null) return;
 
     final newNama = namaController.text.trim();
-    final newEmail = emailController.text.trim();
     final newPassword = passwordController.text.trim();
 
-    if (newNama.isEmpty || newEmail.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nama & Email tidak boleh kosong')),
-      );
+    if (newNama.isEmpty) {
+      _showFlushbar('Nama tidak boleh kosong', success: false);
       return;
     }
 
@@ -79,40 +75,41 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
-      // update tabel users
-      await supabase.from('users').update({
-        'nama': newNama,
-        'email': newEmail,
+      await supabase.from('profiles').update({
+        'username': newNama,
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', user.id);
 
-      // update auth email kalau diubah
-      if (newEmail != user.email) {
-        await supabase.auth.updateUser(
-          UserAttributes(email: newEmail),
-        );
-      }
-
-      // update password kalau diisi
       if (newPassword.isNotEmpty) {
         await supabase.auth.updateUser(
           UserAttributes(password: newPassword),
         );
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profil berhasil diperbarui')),
-      );
+      _showFlushbar('Profil berhasil diperbarui', success: true);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan profil: $e')),
-      );
+      _showFlushbar('Gagal menyimpan profil: $e', success: false);
     }
 
     setState(() {
       isLoading = false;
       passwordController.clear();
     });
+  }
+
+  void _showFlushbar(String message, {bool success = true}) {
+    Flushbar(
+      message: message,
+      duration: const Duration(seconds: 2),
+      backgroundColor: success ? Colors.green : Colors.redAccent,
+      flushbarPosition: FlushbarPosition.TOP,
+      margin: const EdgeInsets.all(8),
+      borderRadius: BorderRadius.circular(8),
+      icon: Icon(
+        success ? Icons.check_circle : Icons.error,
+        color: Colors.white,
+      ),
+    ).show(context);
   }
 
   Future<void> logout() async {
@@ -150,7 +147,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       body: Stack(
         children: [
-          const LinearGradientBackground(),
+          const SolidBackground(),
           SafeArea(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -170,7 +167,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             const SizedBox(height: 20),
                             const Icon(Icons.account_circle,
-                                size: 80, color: Colors.white),
+                                size: 80, color: Color.fromARGB(255, 55, 134, 115)),
                             const SizedBox(height: 20),
                             Container(
                               padding: const EdgeInsets.all(16),
@@ -200,6 +197,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   const SizedBox(height: 20),
                                   TextField(
                                     controller: emailController,
+                                    enabled: false,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(Icons.email),
                                       labelText: 'Email',
@@ -257,9 +255,9 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.lightBlueAccent,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
+       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        selectedItemColor: const Color.fromARGB(255, 50, 170, 144),
+        unselectedItemColor: const Color.fromARGB(179, 98, 207, 184),
         currentIndex: _currentIndex,
         onTap: (index) {
           if (index == 0) {
@@ -282,19 +280,14 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-class LinearGradientBackground extends StatelessWidget {
-  const LinearGradientBackground({super.key});
+
+class SolidBackground extends StatelessWidget {
+  const SolidBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFB2FEFA), Color(0xFF0ED2F7)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
+      color: const Color(0xFFB2FEFA), 
       width: double.infinity,
       height: double.infinity,
     );

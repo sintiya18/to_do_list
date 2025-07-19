@@ -11,10 +11,10 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController namaController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final namaController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
   final supabase = Supabase.instance.client;
 
@@ -44,17 +44,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       final userId = response.user?.id;
-      print("User ID: $userId");
 
       if (userId != null) {
-        final insertResponse = await supabase.from('users').insert({
+        await supabase.from('profiles').insert({
           'id': userId,
-          'nama': nama,
+          'username': nama,
           'email': email,
-          'created_at': DateTime.now().toUtc().toIso8601String(), // Tambah created_at
+          'created_at': DateTime.now().toUtc().toIso8601String(),
         });
-
-        print("Insert response: $insertResponse");
 
         _showMessage("Registrasi berhasil!", success: true);
 
@@ -68,7 +65,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _showMessage("Registrasi gagal: User tidak ditemukan", success: false);
       }
     } catch (error) {
-      print("Register Error: $error");
       _showMessage("Gagal registrasi: $error", success: false);
     }
   }
@@ -104,12 +100,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                const Text(
-                  "Registrasi",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
+                const Text("Registrasi", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
-
                 TextField(
                   controller: namaController,
                   decoration: const InputDecoration(
@@ -121,7 +113,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -134,7 +125,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
                 TextField(
                   controller: passwordController,
                   obscureText: _obscurePassword,
@@ -145,19 +135,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     fillColor: Colors.white,
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
-
                 TextField(
                   controller: confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
@@ -167,19 +150,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     fillColor: Colors.white,
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
-                      },
+                      icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-
                 ElevatedButton(
                   onPressed: _register,
                   style: ElevatedButton.styleFrom(
@@ -189,7 +165,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: const Text("Sign Up"),
                 ),
                 const SizedBox(height: 16),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -201,10 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           MaterialPageRoute(builder: (context) => const LoginScreen()),
                         );
                       },
-                      child: const Text(
-                        "Masuk",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      child: const Text("Masuk", style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
