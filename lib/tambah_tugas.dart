@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dashboard.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:another_flushbar/flushbar.dart';
+
 import 'notification_service.dart';
 
 class TambahTugas extends StatefulWidget {
@@ -10,26 +12,38 @@ class TambahTugas extends StatefulWidget {
 }
 
 class _TambahTugasState extends State<TambahTugas> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _judulController = TextEditingController();
-  final TextEditingController _deadlineController = TextEditingController();
+  final supabase = Supabase.instance.client;
 
-  DateTime? selectedDateTime;
+  final TextEditingController judulController = TextEditingController();
+  final TextEditingController tanggalController = TextEditingController();
 
-  Future<void> _selectDateTime(BuildContext context) async {
-    final DateTime now = DateTime.now();
+  DateTime selectedDateTime = DateTime.now();
 
-    final DateTime? pickedDate = await showDatePicker(
+  @override
+  void dispose() {
+    judulController.dispose();
+    tanggalController.dispose();
+    super.dispose();
+  }
+
+  String _formatDateTime(DateTime dt) {
+    return '${dt.day.toString().padLeft(2, '0')}/'
+        '${dt.month.toString().padLeft(2, '0')}/'
+        '${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _selectDateTime() async {
+    final pickedDate = await showDatePicker(
       context: context,
-      initialDate: selectedDateTime ?? now,
+      initialDate: selectedDateTime,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
 
     if (pickedDate != null) {
-      final TimeOfDay? pickedTime = await showTimePicker(
+      final pickedTime = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.fromDateTime(selectedDateTime ?? now),
+        initialTime: TimeOfDay.fromDateTime(selectedDateTime),
       );
 
       if (pickedTime != null) {
@@ -41,22 +55,56 @@ class _TambahTugasState extends State<TambahTugas> {
             pickedTime.hour,
             pickedTime.minute,
           );
-
-          _deadlineController.text =
-              "${selectedDateTime!.day.toString().padLeft(2, '0')}/"
-              "${selectedDateTime!.month.toString().padLeft(2, '0')}/"
-              "${selectedDateTime!.year} "
-              "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
+          tanggalController.text = _formatDateTime(selectedDateTime);
         });
       }
     }
   }
 
-  @override
-  void dispose() {
-    _judulController.dispose();
-    _deadlineController.dispose();
-    super.dispose();
+  Future<void> _saveTask() async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) {
+      _showFlushbar('❌ User belum login', color: Colors.red);
+      return;
+    }
+
+    try {
+      await supabase.from('todos').insert({
+        'user_id': userId,
+        'title': judulController.text,
+        'deadline': selectedDateTime.toUtc().toIso8601String(),
+        'status': 'belum_dikerjakan',
+      });
+
+      await NotificationService().scheduleNotification(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title: 'Pengingat Tugas',
+        body: 'Kerjakan: ${judulController.text}',
+        scheduledDateTime: selectedDateTime,
+      );
+
+      if (!mounted) return;
+      _showFlushbar('Tugas berhasil ditambahkan', color: Colors.green, thenPop: true);
+    } catch (e) {
+      _showFlushbar('❌ Gagal tambah tugas: $e', color: Colors.red);
+    }
+  }
+
+  void _showFlushbar(String message, {Color color = Colors.green, bool thenPop = false}) {
+    Flushbar(
+      message: message,
+      backgroundColor: color,
+      duration: const Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP,
+      margin: const EdgeInsets.all(8),
+      borderRadius: BorderRadius.circular(8),
+      icon: Icon(
+        color == Colors.green ? Icons.check_circle : Icons.error,
+        color: Colors.white,
+      ),
+    ).show(context).then((_) {
+      if (thenPop && mounted) Navigator.pop(context, true);
+    });
   }
 
   @override
@@ -66,126 +114,125 @@ class _TambahTugasState extends State<TambahTugas> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 8,
+              shadowColor: Colors.teal.withOpacity(0.3),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Tambah Tugas',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 1, 9, 8),
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.playlist_add_check,
+                            color: Color.fromARGB(255, 19, 134, 134), size: 32),
+                        SizedBox(width: 8),
+                        Text(
+                          'Tambah Tugas',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 19, 134, 134),
+                          ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.teal.shade200),
                       ),
-                      const SizedBox(height: 24),
-                      TextFormField(
-                        controller: _judulController,
-                        decoration: const InputDecoration(
+                      child: TextField(
+                        controller: judulController,
+                        decoration: InputDecoration(
                           labelText: 'Judul',
-                          border: OutlineInputBorder(),
+                          labelStyle: const TextStyle(color: Colors.teal),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
                         ),
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? 'Judul tidak boleh kosong'
-                            : null,
                       ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _deadlineController,
+                    ),
+                    const SizedBox(height: 20),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.teal.shade200),
+                      ),
+                      child: TextField(
+                        controller: tanggalController,
                         readOnly: true,
-                        onTap: () => _selectDateTime(context),
-                        decoration: const InputDecoration(
-                          labelText: 'Deadline (Tanggal & Jam)',
-                          border: OutlineInputBorder(),
-                          suffixIcon: Icon(Icons.calendar_today),
+                        onTap: _selectDateTime,
+                        decoration: InputDecoration(
+                          labelText: 'Tanggal & Jam',
+                          labelStyle: const TextStyle(color: Colors.teal),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          suffixIcon: const Icon(Icons.calendar_today,
+                              color: Colors.teal),
                         ),
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? 'Deadline tidak boleh kosong'
-                            : null,
                       ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                if (_formKey.currentState!.validate()) {
-                                  if (selectedDateTime == null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text(
-                                              'Pilih deadline terlebih dahulu')),
-                                    );
-                                    return;
-                                  }
+                    ),
+                    const SizedBox(height: 30),
 
-                                  final newTask = {
-                                    'title': _judulController.text,
-                                    'date': _deadlineController.text,
-                                    'status': 'Belum Dikerjakan',
-                                  };
-
-                                  await NotificationService().scheduleNotification(
-                                    id: DateTime.now()
-                                        .millisecondsSinceEpoch
-                                        .remainder(100000),
-                                    title: 'Pengingat Tugas',
-                                    body:
-                                        'Tugas: ${_judulController.text} - deadline ${_deadlineController.text}',
-                                    scheduledDateTime: selectedDateTime!,
-                                  );
-
-                                  Navigator.pop(context, newTask);
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color.fromARGB(255, 21, 181, 255),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _saveTask,
+                            icon: const Icon(Icons.save),
+                            label: const Text(
+                              'Simpan',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color.fromARGB(255, 7, 185, 255),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Text(
-                                'Simpan',
-                                style: TextStyle(fontSize: 16),
-                              ),
+                              elevation: 3,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const DashboardScreen(),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                        ),
+                        const SizedBox(width: 16),
+
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context, null);
+                            },
+                            icon: const Icon(Icons.close),
+                            label: const Text(
+                              'Batal',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Text(
-                                'Batal',
-                                style: TextStyle(fontSize: 16),
-                              ),
+                              elevation: 3,
                             ),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),

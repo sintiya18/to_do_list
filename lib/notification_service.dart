@@ -1,27 +1,24 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest_all.dart' as tz;
 
 class NotificationService {
-  static final NotificationService _instance = NotificationService._internal();
-  factory NotificationService() => _instance;
-
-  NotificationService._internal();
-
-  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+  static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-  
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const ios = DarwinInitializationSettings();
+
+    const settings = InitializationSettings(
+      android: android,
+      iOS: ios,
+    );
+
+    await _notifications.initialize(settings);
+
+    // Wajib inisialisasi timezone
     tz.initializeTimeZones();
-
-    const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    const InitializationSettings initSettings =
-        InitializationSettings(android: androidSettings);
-
-    await _flutterLocalNotificationsPlugin.initialize(initSettings);
   }
 
   Future<void> scheduleNotification({
@@ -30,25 +27,25 @@ class NotificationService {
     required String body,
     required DateTime scheduledDateTime,
   }) async {
-    final DateTime now = DateTime.now();
+    // Validasi: jangan jadwalkan ke masa lalu
+    if (scheduledDateTime.isBefore(DateTime.now())) {
+      throw Exception('Waktu notifikasi sudah lewat');
+    }
 
-    final DateTime notifTime = scheduledDateTime.subtract(const Duration(minutes: 5)).isBefore(now)
-        ? now.add(const Duration(seconds: 5))
-        : scheduledDateTime.subtract(const Duration(minutes: 5));
-
-    await _flutterLocalNotificationsPlugin.zonedSchedule(
+    await _notifications.zonedSchedule(
       id,
       title,
       body,
-      tz.TZDateTime.from(notifTime, tz.local),
+      tz.TZDateTime.from(scheduledDateTime, tz.local),
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          'tugas_channel_id',
-          'Tugas Channel',
-          channelDescription: 'Notifikasi untuk tugas & deadline',
+          'your_channel_id',
+          'Your Channel Name',
+          channelDescription: 'Your channel description',
           importance: Importance.max,
           priority: Priority.high,
         ),
+        iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
@@ -57,11 +54,33 @@ class NotificationService {
     );
   }
 
+  Future<void> showInstantNotification({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    await _notifications.show(
+      id,
+      title,
+      body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'your_channel_id',
+          'Your Channel Name',
+          channelDescription: 'Your channel description',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+    );
+  }
+
   Future<void> cancelNotification(int id) async {
-    await _flutterLocalNotificationsPlugin.cancel(id);
+    await _notifications.cancel(id);
   }
 
   Future<void> cancelAllNotifications() async {
-    await _flutterLocalNotificationsPlugin.cancelAll();
+    await _notifications.cancelAll();
   }
 }

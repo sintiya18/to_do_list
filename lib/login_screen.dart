@@ -1,15 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:another_flushbar/flushbar.dart'; 
 import 'register_screen.dart';
-import 'dashboard.dart'; 
+import 'dashboard.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final TextEditingController usernameController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
+  State<LoginScreen> createState() => _LoginScreenState();
+}
 
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  final supabase = Supabase.instance.client;
+
+  void _login() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      _showMessage("Email dan password tidak boleh kosong!", success: false);
+      return;
+    }
+
+    try {
+      final response = await supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.user != null) {
+        _showMessage("Login berhasil!", success: true);
+
+        // Arahkan ke Dashboard
+        Future.delayed(const Duration(seconds: 1), () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          );
+        });
+      }
+    } catch (e) {
+      _showMessage("Login gagal: ${e.toString()}", success: false);
+    }
+  }
+
+  void _showMessage(String msg, {bool success = true}) {
+    Flushbar(
+      message: msg,
+      duration: const Duration(seconds: 2),
+      backgroundColor: success ? Colors.green : Colors.redAccent,
+      flushbarPosition: FlushbarPosition.TOP,
+      margin: const EdgeInsets.all(8),
+      borderRadius: BorderRadius.circular(8),
+      icon: Icon(
+        success ? Icons.check_circle : Icons.error,
+        color: Colors.white,
+      ),
+    ).show(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -31,12 +86,13 @@ class LoginScreen extends StatelessWidget {
                 const SizedBox(height: 40),
 
                 TextField(
-                  controller: usernameController,
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.person),
-                    hintText: "Username",
+                    prefixIcon: const Icon(Icons.email),
+                    hintText: "Email",
                     filled: true,
-                    fillColor: Colors.white, 
+                    fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -69,14 +125,7 @@ class LoginScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DashboardScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: _login,
                     child: const Text("Login"),
                   ),
                 ),
@@ -88,9 +137,10 @@ class LoginScreen extends StatelessWidget {
                     const Text("Belum punya akun? "),
                     TextButton(
                       onPressed: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => const RegisterScreen()),
                         );
                       },
                       child: const Text(

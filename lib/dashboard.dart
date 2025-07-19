@@ -1,48 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
-import 'package:timezone/data/latest.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:another_flushbar/flushbar.dart';
 
 import 'edit_tugas.dart';
 import 'tambah_tugas.dart';
 import 'profil.dart';
-
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
-
-void initializeNotifications() async {
-  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-  const initSettings = InitializationSettings(android: androidInit);
-  await flutterLocalNotificationsPlugin.initialize(initSettings);
-}
-
-Future<void> scheduleNotification({
-  required String title,
-  required String body,
-  required DateTime scheduledTime,
-}) async {
-  const androidDetails = AndroidNotificationDetails(
-    'task_channel',
-    'Tugas',
-    channelDescription: 'Pengingat tugas',
-    importance: Importance.max,
-    priority: Priority.high,
-  );
-  const platformDetails = NotificationDetails(android: androidDetails);
-
-  await flutterLocalNotificationsPlugin.zonedSchedule(
-    scheduledTime.millisecondsSinceEpoch ~/ 1000,
-    title,
-    body,
-    tz.TZDateTime.from(scheduledTime, tz.local),
-    platformDetails,
-    androidAllowWhileIdle: true,
-    uiLocalNotificationDateInterpretation:
-        UILocalNotificationDateInterpretation.absoluteTime,
-    matchDateTimeComponents: DateTimeComponents.dateAndTime,
-  );
-}
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -52,112 +15,131 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  List<Map<String, String>> pendingTasks = [
-    {
-      'title': 'Belajar Flutter',
-      'date': '07/07/2025 14:00',
-      'status': 'Belum Dikerjakan'
-    },
-    {
-      'title': 'Mengerjakan Proyek Kelompok',
-      'date': '29/07/2025 16:30',
-      'status': 'Belum Dikerjakan'
-    },
-  ];
-
-  List<Map<String, String>> completedTasks = [
-    {
-      'title': 'Membuat laporan mingguan',
-      'date': '25/06/2025 10:00',
-      'status': 'Sudah Dikerjakan'
-    },
-    {
-      'title': 'Membaca materi desain',
-      'date': '20/06/2025 08:30',
-      'status': 'Sudah Dikerjakan'
-    },
-  ];
-
+  List<Map<String, dynamic>> pendingTasks = [];
+  List<Map<String, dynamic>> completedTasks = [];
   TextEditingController searchController = TextEditingController();
   String query = '';
+  String userDisplayName = 'User';
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    initializeNotifications();
-    tz.initializeTimeZones();
+    fetchUserName();
+    fetchTasks();
   }
 
-  void editTask(Map<String, String> task) async {
-    final updatedTask = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => EditTugasScreen(task: task)),
-    );
+  Future<void> fetchUserName() async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+    if (user != null) {
+      final response = await supabase
+          .from('users')
+          .select('nama')
+          .eq('id', user.id)
+          .maybeSingle();
 
-    if (updatedTask != null) {
       setState(() {
-        pendingTasks.remove(task);
-        completedTasks.remove(task);
-
-        if (updatedTask['status'] == 'Sudah Dikerjakan') {
-          completedTasks.add(updatedTask);
-        } else {
-          pendingTasks.add(updatedTask);
-        }
+        userDisplayName = (response?['nama'] ?? user.email ?? 'User').toString();
       });
     }
   }
 
-  void deleteTask(Map<String, String> task) {
+  Future<void> fetchTasks() async {
+    setState(() => isLoading = true);
+
+    final supabase = Supabase.instance.client;
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final response = await supabase
+        .from('todos')
+        .select()
+        .eq('user_id', userId)
+        .order('deadline', ascending: true);
+
+    final List<Map<String, dynamic>> pending = [];
+    final List<Map<String, dynamic>> completed = [];
+
+    for (var task in response) {
+      final status = (task['status'] ?? 'belum_dikerjakan').toString().toLowerCase();
+      final title = (task['title'] ?? '').toString();
+      final deadline = (task['deadline'] ?? '').toString();
+      final id = task['id'];
+
+      String formattedDate = '';
+      try {
+        final dateTime = DateTime.parse(deadline).toLocal();
+        formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+      } catch (_) {
+        formattedDate = deadline;
+      }
+
+      final map = {
+        'id': id,
+        'title': title,
+        'date': formattedDate,
+        'status': status,
+        'deadline': deadline,
+      };
+
+      if (status == 'sudah_dikerjakan') {
+        completed.add(map);
+      } else {
+        pending.add(map);
+      }
+    }
+
     setState(() {
-      pendingTasks.remove(task);
-      completedTasks.remove(task);
+      pendingTasks = pending;
+      completedTasks = completed;
+      isLoading = false;
     });
   }
 
-  Future<void> pickReminderTime(Map<String, String> task) async {
-    DateTime? taskDateTime;
-    try {
-      taskDateTime =
-          DateFormat('dd/MM/yyyy HH:mm').parse(task['date']!);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Format tanggal & jam tidak valid")),
-      );
-      return;
-    }
+  Future<void> deleteTask(Map<String, dynamic> task) async {
+    final supabase = Supabase.instance.client;
+    await supabase.from('todos').delete().eq('id', task['id']);
 
-    if (taskDateTime.isBefore(DateTime.now())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Waktu sudah lewat, pilih yang lain")),
-      );
-      return;
-    }
-
-    await scheduleNotification(
-      title: "Pengingat Tugas",
-      body: task['title']!,
-      scheduledTime: taskDateTime,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Pengingat untuk '${task['title']}' dijadwalkan!")),
-    );
+    showFlushbar("Tugas berhasil dihapus", color: Colors.red);
+    fetchTasks();
   }
 
-  Widget buildTaskList(String title, List<Map<String, String>> tasks) {
-    final filteredTasks = tasks.where((task) {
-      return task['title']!.toLowerCase().contains(query.toLowerCase());
-    }).toList();
+  Future<void> editTask(Map<String, dynamic> task) async {
+    final updated = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditTugasScreen(task: task)),
+    );
+    if (updated == true) {
+      fetchTasks();
+    }
+  }
+
+  void showFlushbar(String message, {Color color = Colors.green}) {
+    Flushbar(
+      message: message,
+      backgroundColor: color,
+      duration: const Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP,
+      margin: const EdgeInsets.all(8),
+      borderRadius: BorderRadius.circular(8),
+      icon: Icon(
+        color == Colors.green ? Icons.check_circle : Icons.error,
+        color: Colors.white,
+      ),
+    ).show(context);
+  }
+
+  Widget buildTaskList(String title, List<Map<String, dynamic>> tasks) {
+    final filteredTasks = tasks
+        .where((task) => task['title'].toLowerCase().contains(query.toLowerCase()))
+        .toList();
 
     if (filteredTasks.isEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Text("Tidak ada tugas."),
           const SizedBox(height: 16),
@@ -168,43 +150,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         ...filteredTasks.map(
           (task) => Card(
             child: ListTile(
               leading: Icon(
-                task['status'] == 'Sudah Dikerjakan'
+                task['status'] == 'sudah_dikerjakan'
                     ? Icons.check_box
                     : Icons.check_box_outline_blank,
-                color: task['status'] == 'Sudah Dikerjakan'
-                    ? Colors.green
-                    : Colors.grey,
+                color: task['status'] == 'sudah_dikerjakan' ? Colors.green : Colors.grey,
               ),
-              title: Text(task['title']!),
+              title: Text(task['title']),
               subtitle: Text("Deadline: ${task['date']}"),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (task['status'] == 'Belum Dikerjakan') ...[
-                    IconButton(
-                      icon: const Icon(Icons.alarm, color: Colors.orange),
-                      onPressed: () => pickReminderTime(task),
-                      tooltip: "Setel pengingat",
-                    ),
+                  if (task['status'] != 'sudah_dikerjakan') ...[
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.blue),
                       onPressed: () => editTask(task),
-                      tooltip: "Edit tugas",
                     ),
                   ],
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () => deleteTask(task),
-                    tooltip: "Hapus tugas",
                   ),
                 ],
               ),
@@ -221,84 +191,80 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFB2FEFA),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Halo, User! 👋',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await fetchUserName();
+            await fetchTasks();
+          },
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Halo, $userDisplayName 👋',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.teal,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Selamat datang di aplikasi To-Do List',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Cari tugas...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            query = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      buildTaskList('Tugas Belum Dikerjakan', pendingTasks),
+                      buildTaskList('Tugas Sudah Dikerjakan', completedTasks),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Selamat datang di aplikasi To-Do List',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Cari tugas...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      query = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                buildTaskList('Tugas Belum Dikerjakan', pendingTasks),
-                buildTaskList('Tugas Sudah Dikerjakan', completedTasks),
-              ],
-            ),
-          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final newTask = await Navigator.push(
+          final result = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const TambahTugas()),
+            MaterialPageRoute(builder: (_) => const TambahTugas()),
           );
-
-          if (newTask != null) {
-            setState(() {
-              if (newTask['status'] == 'Sudah Dikerjakan') {
-                completedTasks.add(newTask);
-              } else {
-                pendingTasks.add(newTask);
-              }
-            });
+          if (result == true) {
+            fetchTasks();
           }
         },
         backgroundColor: Colors.teal,
         child: const Icon(Icons.add),
-        tooltip: "Tambah tugas",
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.lightBlueAccent,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
         currentIndex: 0,
-        onTap: (index) {
+        onTap: (index) async {
           if (index == 1) {
-            Navigator.push(
+            final updated = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ProfilePage()),
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
             );
+            if (updated == true) {
+              await fetchUserName();
+            }
           }
         },
         items: const [
