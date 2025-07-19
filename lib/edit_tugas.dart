@@ -117,7 +117,7 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
       Navigator.pop(context, true);
     } catch (e) {
       _showFlushbar(
-        '❌ Gagal update tugas: $e',
+        'Gagal update tugas: $e',
         Colors.red.shade400,
         Icons.error,
       );
@@ -137,64 +137,134 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Tugas'),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              TextField(
-                controller: judulController,
-                decoration: const InputDecoration(
-                  labelText: 'Judul',
-                  border: OutlineInputBorder(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFa0f1f1), Color(0xFFc2fcfc)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Card(
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(8),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Edit Tugas',
+                      style: TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 24),
+
+                    TextField(
+                      controller: judulController,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.title),
+                        labelText: 'Judul',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: tanggalController,
+                      readOnly: true,
+                      onTap: _selectDateTime,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.calendar_today),
+                        labelText: 'Tanggal & Jam',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    DropdownButtonFormField<String>(
+                      value: status,
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'belum_dikerjakan',
+                          child: Text('Belum Dikerjakan'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'sudah_dikerjakan',
+                          child: Text('Sudah Dikerjakan'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            status = value;
+                          });
+                        }
+                      },
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.assignment_turned_in),
+                        labelText: 'Status',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _saveTask,
+                            icon: const Icon(Icons.save),
+                            label: const Text(
+                              'Simpan',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              minimumSize: const Size.fromHeight(50),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context, false);
+                            },
+                            icon: const Icon(Icons.cancel),
+                            label: const Text(
+                              'Batal',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              minimumSize: const Size.fromHeight(50),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: tanggalController,
-                readOnly: true,
-                onTap: _selectDateTime,
-                decoration: const InputDecoration(
-                  labelText: 'Tanggal & Jam',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: status,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'belum_dikerjakan',
-                    child: Text('Belum Dikerjakan'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'sudah_dikerjakan',
-                    child: Text('Sudah Dikerjakan'),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      status = value;
-                    });
-                  }
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Status',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _saveTask,
-                child: const Text('Simpan'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
