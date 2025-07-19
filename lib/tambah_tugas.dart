@@ -86,7 +86,7 @@ class _TambahTugasState extends State<TambahTugas> {
       if (!mounted) return;
       _showFlushbar('Tugas berhasil ditambahkan', color: Colors.green, thenPop: true);
     } catch (e) {
-      _showFlushbar('❌ Gagal tambah tugas: $e', color: Colors.red);
+      _showFlushbar('Gagal tambah tugas: $e', color: Colors.red);
     }
   }
 
@@ -120,7 +120,7 @@ class _TambahTugasState extends State<TambahTugas> {
                 borderRadius: BorderRadius.circular(20),
               ),
               elevation: 8,
-              shadowColor: Colors.teal.withOpacity(0.3),
+              shadowColor: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3),
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
@@ -130,14 +130,14 @@ class _TambahTugasState extends State<TambahTugas> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
                         Icon(Icons.playlist_add_check,
-                            color: Color.fromARGB(255, 19, 134, 134), size: 32),
+                            color: Color.fromARGB(255, 0, 0, 0), size: 32),
                         SizedBox(width: 8),
                         Text(
                           'Tambah Tugas',
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(255, 19, 134, 134),
+                            color: Color.fromARGB(255, 0, 0, 0),
                           ),
                         ),
                       ],
@@ -148,13 +148,14 @@ class _TambahTugasState extends State<TambahTugas> {
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.teal.shade200),
+                        border: Border.all(color: const Color.fromARGB(255, 0, 0, 0)),
                       ),
                       child: TextField(
                         controller: judulController,
                         decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.title),
                           labelText: 'Judul',
-                          labelStyle: const TextStyle(color: Colors.teal),
+                          labelStyle: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
@@ -167,7 +168,7 @@ class _TambahTugasState extends State<TambahTugas> {
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.teal.shade200),
+                        border: Border.all(color: const Color.fromARGB(255, 0, 0, 0)),
                       ),
                       child: TextField(
                         controller: tanggalController,
@@ -175,12 +176,12 @@ class _TambahTugasState extends State<TambahTugas> {
                         onTap: _selectDateTime,
                         decoration: InputDecoration(
                           labelText: 'Tanggal & Jam',
-                          labelStyle: const TextStyle(color: Colors.teal),
-                          border: InputBorder.none,
+                          prefixIcon: Icon(Icons.calendar_today),
+                          labelStyle: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
                           suffixIcon: const Icon(Icons.calendar_today,
-                              color: Colors.teal),
+                              color: Color.fromARGB(255, 0, 0, 0)),
                         ),
                       ),
                     ),
@@ -214,7 +215,7 @@ class _TambahTugasState extends State<TambahTugas> {
                             onPressed: () {
                               Navigator.pop(context, null);
                             },
-                            icon: const Icon(Icons.close),
+                            icon: const Icon(Icons.cancel),
                             label: const Text(
                               'Batal',
                               style: TextStyle(fontSize: 16),
