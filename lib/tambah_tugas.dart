@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:another_flushbar/flushbar.dart';
-
 import 'notification_service.dart';
 
 class TambahTugas extends StatefulWidget {
@@ -64,7 +63,15 @@ class _TambahTugasState extends State<TambahTugas> {
   Future<void> _saveTask() async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) {
-      _showFlushbar('❌ User belum login', color: Colors.red);
+      _showFlushbar('User belum login', color: Colors.red);
+      return;
+    }
+
+    if (selectedDateTime.isBefore(DateTime.now())) {
+      _showFlushbar(
+        'Waktu sudah lewat, pilih waktu di masa depan!',
+        color: Colors.orange,
+      );
       return;
     }
 
@@ -199,8 +206,7 @@ class _TambahTugasState extends State<TambahTugas> {
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color.fromARGB(255, 7, 185, 255),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -222,8 +228,7 @@ class _TambahTugasState extends State<TambahTugas> {
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.redAccent,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),

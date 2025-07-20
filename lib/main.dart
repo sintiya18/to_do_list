@@ -10,7 +10,6 @@ import 'login_screen.dart';
 import 'tambah_tugas.dart';
 import 'profil.dart';
 import 'notification_service.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
