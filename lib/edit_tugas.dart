@@ -53,8 +53,10 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
   Future<void> _selectDateTime() async {
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: selectedDateTime,
-      firstDate: DateTime(2020),
+      initialDate: selectedDateTime.isBefore(DateTime.now())
+          ? DateTime.now()
+          : selectedDateTime,
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
 
@@ -65,14 +67,25 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
       );
 
       if (pickedTime != null) {
-        setState(() {
-          selectedDateTime = DateTime(
-            pickedDate.year,
-            pickedDate.month,
-            pickedDate.day,
-            pickedTime.hour,
-            pickedTime.minute,
+        final chosen = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+
+        if (chosen.isBefore(DateTime.now())) {
+          _showFlushbar(
+            'Waktu sudah lewat. Pilih waktu yang valid!',
+            Colors.orange,
+            Icons.warning,
           );
+          return;
+        }
+
+        setState(() {
+          selectedDateTime = chosen;
           tanggalController.text = _formatDateTime(selectedDateTime);
         });
       }
@@ -87,6 +100,15 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
   }
 
   Future<void> _saveTask() async {
+    if (selectedDateTime.isBefore(DateTime.now())) {
+      _showFlushbar(
+        'Waktu deadline sudah lewat. Pilih waktu yang valid!',
+        Colors.orange,
+        Icons.warning,
+      );
+      return;
+    }
+
     try {
       await supabase.from('todos').update({
         'title': judulController.text,
@@ -95,6 +117,7 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
       }).eq('id', widget.task['id']);
 
       DateTime waktuNotif = selectedDateTime;
+
       if (waktuNotif.isBefore(DateTime.now().add(const Duration(seconds: 5)))) {
         waktuNotif = DateTime.now().add(const Duration(seconds: 10));
       }
@@ -110,7 +133,7 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
 
       await _showFlushbar(
         'Tugas berhasil diupdate',
-        Colors.green.shade400,
+        Colors.green.shade600,
         Icons.check_circle,
       );
 
@@ -118,7 +141,7 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
     } catch (e) {
       _showFlushbar(
         'Gagal update tugas: $e',
-        Colors.red.shade400,
+        Colors.red.shade600,
         Icons.error,
       );
     }
@@ -126,11 +149,24 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
 
   Future<void> _showFlushbar(String message, Color color, IconData icon) {
     return Flushbar(
-      message: message,
+      messageText: Text(
+        message,
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+      ),
       backgroundColor: color,
       duration: const Duration(seconds: 2),
       flushbarPosition: FlushbarPosition.TOP,
       icon: Icon(icon, color: Colors.white),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      borderRadius: BorderRadius.circular(12),
+      boxShadows: [
+        const BoxShadow(
+          color: Colors.black26,
+          offset: Offset(0, 2),
+          blurRadius: 6,
+        ),
+      ],
+      padding: const EdgeInsets.all(16),
     ).show(context);
   }
 
