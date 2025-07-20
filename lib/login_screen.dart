@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:another_flushbar/flushbar.dart'; 
+import 'package:another_flushbar/flushbar.dart';
+
 import 'register_screen.dart';
 import 'dashboard.dart';
 
@@ -16,6 +17,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
 
   final supabase = Supabase.instance.client;
+
+  bool _obscurePassword = true;
 
   void _login() async {
     final email = emailController.text.trim();
@@ -35,7 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.user != null) {
         _showMessage("Login berhasil!", success: true);
 
-        // Arahkan ke Dashboard
         Future.delayed(const Duration(seconds: 1), () {
           Navigator.pushReplacement(
             context,
@@ -85,6 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
+                // Email Field
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -100,9 +103,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
+                // Password Field
                 TextField(
                   controller: passwordController,
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.lock),
                     hintText: "Password",
@@ -110,6 +114,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
                 ),
