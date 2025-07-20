@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:another_flushbar/flushbar.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 import 'edit_tugas.dart';
 import 'tambah_tugas.dart';
@@ -17,10 +18,10 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   List<Map<String, dynamic>> pendingTasks = [];
   List<Map<String, dynamic>> completedTasks = [];
-  TextEditingController searchController = TextEditingController();
-  String query = '';
+  List<Map<String, dynamic>> overdueTasks = [];
   String userDisplayName = 'User';
   bool isLoading = false;
+  String searchQuery = '';
 
   @override
   void initState() {
@@ -30,21 +31,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> fetchUserName() async {
-  final supabase = Supabase.instance.client;
-  final user = supabase.auth.currentUser;
-  if (user != null) {
-    final response = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', user.id)
-        .maybeSingle();
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+    if (user != null) {
+      final response = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .maybeSingle();
 
-    setState(() {
-      userDisplayName = (response?['username'] ?? user.email ?? 'User').toString();
-    });
+      setState(() {
+        userDisplayName =
+            (response?['username'] ?? user.email ?? 'User').toString();
+      });
+    }
   }
-}
-
 
   Future<void> fetchTasks() async {
     setState(() => isLoading = true);
@@ -61,16 +62,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final List<Map<String, dynamic>> pending = [];
     final List<Map<String, dynamic>> completed = [];
+    final List<Map<String, dynamic>> overdue = [];
 
     for (var task in response) {
-      final status = (task['status'] ?? 'belum_dikerjakan').toString().toLowerCase();
+      final status =
+          (task['status'] ?? 'belum_dikerjakan').toString().toLowerCase();
       final title = (task['title'] ?? '').toString();
       final deadline = (task['deadline'] ?? '').toString();
       final id = task['id'];
 
       String formattedDate = '';
+      DateTime? dateTime;
       try {
-        final dateTime = DateTime.parse(deadline).toLocal();
+        dateTime = DateTime.parse(deadline).toLocal();
         formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
       } catch (_) {
         formattedDate = deadline;
@@ -86,6 +90,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (status == 'sudah_dikerjakan') {
         completed.add(map);
+      } else if (dateTime != null && dateTime.isBefore(DateTime.now())) {
+        overdue.add(map);
       } else {
         pending.add(map);
       }
@@ -94,6 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       pendingTasks = pending;
       completedTasks = completed;
+      overdueTasks = overdue;
       isLoading = false;
     });
   }
@@ -101,7 +108,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> deleteTask(Map<String, dynamic> task) async {
     final supabase = Supabase.instance.client;
     await supabase.from('todos').delete().eq('id', task['id']);
-
     showFlushbar("Tugas berhasil dihapus", color: Colors.red);
     fetchTasks();
   }
@@ -132,58 +138,138 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget buildTaskList(String title, List<Map<String, dynamic>> tasks) {
-    final filteredTasks = tasks
-        .where((task) => task['title'].toLowerCase().contains(query.toLowerCase()))
+    final filtered = tasks
+        .where((task) => task['title']
+            .toLowerCase()
+            .contains(searchQuery.toLowerCase()))
         .toList();
-
-    if (filteredTasks.isEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          const Text("Tidak ada tugas."),
-          const SizedBox(height: 16),
-        ],
-      );
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        ...filteredTasks.map(
-          (task) => Card(
-            child: ListTile(
-              leading: Icon(
-                task['status'] == 'sudah_dikerjakan'
-                    ? Icons.check_box
-                    : Icons.check_box_outline_blank,
-                color: task['status'] == 'sudah_dikerjakan' ? Colors.green : Colors.grey,
-              ),
-              title: Text(task['title']),
-              subtitle: Text("Deadline: ${task['date']}"),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (task['status'] != 'sudah_dikerjakan') ...[
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => editTask(task),
-                    ),
-                  ],
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => deleteTask(task),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
+        const SizedBox(height: 8),
+        if (filtered.isEmpty)
+          const Text(
+            "Tidak ada tugas.",
+            textAlign: TextAlign.left,
+            style: TextStyle(fontStyle: FontStyle.italic),
+          )
+        else
+          ...filtered.map(
+            (task) {
+              Color cardColor = Colors.white;
+              Widget leadingIcon = const Icon(Icons.circle, color: Colors.grey);
+
+              if (task['status'] == 'sudah_dikerjakan') {
+                cardColor = Colors.green.shade100;
+                leadingIcon =
+                    const Icon(Icons.check_circle, color: Colors.green);
+              } else {
+                final deadline = DateTime.tryParse(task['deadline'] ?? '');
+                if (deadline != null && deadline.isBefore(DateTime.now())) {
+                  cardColor = Colors.red.shade100;
+                  leadingIcon = const Icon(Icons.warning, color: Colors.red);
+                } else {
+                  cardColor = Colors.yellow.shade100;
+                  leadingIcon =
+                      const Icon(Icons.hourglass_empty, color: Colors.orange);
+                }
+              }
+
+              return Card(
+                color: cardColor,
+                child: ListTile(
+                  leading: leadingIcon,
+                  title: Text(task['title']),
+                  subtitle: Text("Deadline: ${task['date']}"),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (task['status'] != 'sudah_dikerjakan') ...[
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => editTask(task),
+                        ),
+                      ],
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => deleteTask(task),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         const SizedBox(height: 16),
       ],
+    );
+  }
+
+  Widget buildStatsSummary() {
+    final total =
+        pendingTasks.length + completedTasks.length + overdueTasks.length;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Text(
+              '📊 Statistik Tugas',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 150,
+              child: PieChart(
+                PieChartData(
+                  sections: [
+                    PieChartSectionData(
+                      value: completedTasks.length.toDouble(),
+                      color: Colors.green,
+                      title:
+                          '${(total > 0 ? completedTasks.length / total * 100 : 0).toStringAsFixed(1)}%\nSelesai',
+                      radius: 50,
+                      titleStyle: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    PieChartSectionData(
+                      value: pendingTasks.length.toDouble(),
+                      color: Colors.orange,
+                      title:
+                          '${(total > 0 ? pendingTasks.length / total * 100 : 0).toStringAsFixed(1)}%\nBelum',
+                      radius: 50,
+                      titleStyle: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    PieChartSectionData(
+                      value: overdueTasks.length.toDouble(),
+                      color: Colors.red,
+                      title:
+                          '${(total > 0 ? overdueTasks.length / total * 100 : 0).toStringAsFixed(1)}%\nOverdue',
+                      radius: 50,
+                      titleStyle: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Total Tugas: $total',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -203,24 +289,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Halo, $userDisplayName 👋',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.teal,
+                      const SizedBox(height: 8),
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              'Halo, $userDisplayName 👋',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.teal,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Siap menyelesaikan tugas hari ini? 🚀',
+                              style: TextStyle(fontSize: 16),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Siap menyelesaikan tugas hari ini? 🚀',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 16),
+                      buildStatsSummary(),
                       TextField(
-                        controller: searchController,
                         decoration: InputDecoration(
                           hintText: 'Cari tugas...',
                           prefixIcon: const Icon(Icons.search),
@@ -230,13 +323,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         onChanged: (value) {
                           setState(() {
-                            query = value;
+                            searchQuery = value;
                           });
                         },
                       ),
                       const SizedBox(height: 16),
                       buildTaskList('Tugas Belum Dikerjakan', pendingTasks),
                       buildTaskList('Tugas Sudah Dikerjakan', completedTasks),
+                      buildTaskList('Tugas Overdue', overdueTasks),
                     ],
                   ),
                 ),
@@ -256,9 +350,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-        selectedItemColor: const Color.fromARGB(255, 50, 170, 144),
-        unselectedItemColor: const Color.fromARGB(179, 98, 207, 184),
+        backgroundColor: Colors.white,
+        selectedItemColor: Colors.teal,
+        unselectedItemColor: Colors.teal[200],
         currentIndex: 0,
         onTap: (index) async {
           if (index == 1) {
