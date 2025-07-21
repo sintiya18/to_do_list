@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:another_flushbar/flushbar.dart';
 
-import 'notification_service.dart';
-
 class EditTugasScreen extends StatefulWidget {
   final Map<String, dynamic> task;
 
@@ -115,19 +113,6 @@ class _EditTugasScreenState extends State<EditTugasScreen> {
         'deadline': selectedDateTime.toUtc().toIso8601String(),
         'status': status,
       }).eq('id', widget.task['id']);
-
-      DateTime waktuNotif = selectedDateTime;
-
-      if (waktuNotif.isBefore(DateTime.now().add(const Duration(seconds: 5)))) {
-        waktuNotif = DateTime.now().add(const Duration(seconds: 10));
-      }
-
-      await NotificationService().scheduleNotification(
-        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        title: 'Pengingat Tugas',
-        body: 'Kerjakan: ${judulController.text}',
-        scheduledDateTime: waktuNotif,
-      );
 
       if (!mounted) return;
 

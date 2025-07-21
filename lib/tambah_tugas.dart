@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:another_flushbar/flushbar.dart';
-import 'notification_service.dart';
+
 
 class TambahTugas extends StatefulWidget {
   const TambahTugas({super.key});
@@ -83,12 +83,6 @@ class _TambahTugasState extends State<TambahTugas> {
         'status': 'belum_dikerjakan',
       });
 
-      await NotificationService().scheduleNotification(
-        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        title: 'Pengingat Tugas',
-        body: 'Kerjakan: ${judulController.text}',
-        scheduledDateTime: selectedDateTime,
-      );
 
       if (!mounted) return;
       _showFlushbar('Tugas berhasil ditambahkan', color: Colors.green, thenPop: true);
